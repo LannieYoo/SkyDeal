@@ -292,57 +292,58 @@ export async function searchFlexibleDates(params: SearchParams): Promise<{
 }> {
   const { origin, destination, departureDate, returnDate, flexibleRange } = params;
   
-  // Scrape real-time results for exactly the requested dates
-  const offers = await searchFlights(params);
-  
-  // Use the best scraped price as the anchor for the grid, default if scrape failed
-  const basePriceForGrid = offers.length > 0 ? offers[0].price : 1000000;
-
-  // Generate date variations (±N days from selected dates)
-  const depDate = new Date(departureDate);
-  const retDate = new Date(returnDate);
-  const range = flexibleRange || 3;
-  
-  const dateGrid: FlexibleDateResult[] = [];
-
-  for (let depOffset = -range; depOffset <= range; depOffset++) {
-    for (let retOffset = -range; retOffset <= range; retOffset++) {
-      const newDepDate = new Date(depDate);
-      newDepDate.setDate(newDepDate.getDate() + depOffset);
-      const newRetDate = new Date(retDate);
-      newRetDate.setDate(newRetDate.getDate() + retOffset);
-
-      if (newDepDate >= newRetDate) continue;
-      if (newDepDate < new Date()) continue;
-
-      const depStr = newDepDate.toISOString().split('T')[0];
-      const retStr = newRetDate.toISOString().split('T')[0];
-
-      // Variance algorithm: weekend penalty + variation
-      const depDay = newDepDate.getDay();
-      const dayMultiplier = (depDay === 0 || depDay === 5 || depDay === 6) ? 1.15 : 0.95;
-      const dateMultiplier = 1 + (Math.abs(depOffset) + Math.abs(retOffset)) * 0.05 * (Math.random() > 0.5 ? -1 : 1);
-      
-      let price = Math.round(basePriceForGrid * dayMultiplier * dateMultiplier / 1000) * 1000;
-      
-      // Prevent price from being exactly the same as anchor if dates differ
-      if (depOffset !== 0 || retOffset !== 0) {
-        price = price + (Math.round((Math.random() * 50000) / 1000) * 1000) * (Math.random() > 0.5 ? 1 : -1);
-      } else {
-        price = basePriceForGrid; // center of grid matches exact scrape
+  try {
+    const range = flexibleRange || 3;
+    const res = await fetch(`http://localhost:8000/api/flexible-dates?origin=${origin}&destination=${destination}&departureDate=${departureDate}&returnDate=${returnDate}&flexibleRange=${range}`);
+    
+    if (res.ok) {
+      const data = await res.json();
+      if (data.offers && data.offers.length > 0) {
+        return {
+          offers: data.offers,
+          dateGrid: data.dateGrid || []
+        };
       }
-
-      dateGrid.push({
-        departureDate: depStr,
-        returnDate: retStr,
-        minPrice: price,
-        currency: 'KRW',
-      });
     }
+    console.error("API returned empty or failed:", res.status);
+    throw new Error('Fallback trigger');
+  } catch (e) {
+    console.error("Failed to fetch flexible dates from python API, using fallback logic", e);
+    // Fallback if backend is not running or scraped 0 flights for a complex route
+    const fallbackOffers = generateGenericRoute(origin, destination, departureDate, returnDate);
+    const dateGrid: FlexibleDateResult[] = [];
+    const baseDate = new Date(departureDate);
+    const baseRet = new Date(returnDate);
+    const range = flexibleRange || 3;
+    const basePrice = fallbackOffers.length > 0 ? fallbackOffers[0].price : 1200000;
+    
+    for (let d = -range; d <= range; d++) {
+      for (let r = -range; r <= range; r++) {
+        const dd = new Date(baseDate); dd.setDate(dd.getDate() + d);
+        const rr = new Date(baseRet); rr.setDate(rr.getDate() + r);
+        if (dd >= rr || dd < new Date()) continue;
+        
+        // Deterministic price variation based on days
+        const diff = Math.abs(d) + Math.abs(r);
+        let multiplier = 1.0;
+        if (dd.getDay() === 0 || dd.getDay() === 6) multiplier += 0.15;
+        if (rr.getDay() === 0 || rr.getDay() === 6) multiplier += 0.15;
+        multiplier += (diff * 0.05); // slightly more expensive as you move away
+
+        // Hash for deterministic pseudo-random price variation
+        const hash = (dd.getDate() * 11 + rr.getDate() * 17) % 15;
+        const adjustedPrice = Math.floor(basePrice * multiplier) + (hash * 5000);
+        
+        dateGrid.push({
+          departureDate: dd.toISOString().split('T')[0],
+          returnDate: rr.toISOString().split('T')[0],
+          minPrice: adjustedPrice,
+          currency: 'KRW'
+        });
+      }
+    }
+    
+    return { offers: fallbackOffers, dateGrid };
   }
-
-  // Sort date grid by price
-  dateGrid.sort((a, b) => a.minPrice - b.minPrice);
-
-  return { offers: offers, dateGrid };
 }
+

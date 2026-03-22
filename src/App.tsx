@@ -32,6 +32,7 @@ function App() {
   const [selectedFlexRet, setSelectedFlexRet] = useState('');
   const [currency, setCurrency] = useState<Currency>('KRW');
   const [lang, setLang] = useState<Language>('ko');
+  const [stopsFilter, setStopsFilter] = useState<number | null>(null);
   const [searchFormPrefill, setSearchFormPrefill] = useState<{ origin: string; destination: string; departureDate: string; returnDate: string; timestamp: number } | null>(null);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryEntry[]>(() => {
     try {
@@ -133,15 +134,6 @@ function App() {
         return [...result, ...otherOffers];
       });
       setAirlineFilters(buildAirlineFilters([...offers, ...result]));
-      
-      if (result.length > 0) {
-        const realMinPrice = Math.min(...result.map(o => o.price));
-        setDateGrid(prevGrid => prevGrid.map(cell => 
-          (cell.departureDate === dep && cell.returnDate === ret)
-            ? { ...cell, minPrice: realMinPrice }
-            : cell
-        ));
-      }
     } catch {
       console.error('Flexible date search failed');
     } finally {
@@ -170,6 +162,12 @@ function App() {
       offer.airlineCodes.some(code => checkedCodes.has(code))
     );
 
+    if (stopsFilter !== null) {
+      filtered = filtered.filter(o => 
+        o.outbound.stops <= stopsFilter && o.inbound.stops <= stopsFilter
+      );
+    }
+
     if (dateGrid.length > 0 && selectedFlexDep && selectedFlexRet) {
       filtered = filtered.filter(o => o.departureDate === selectedFlexDep && o.returnDate === selectedFlexRet);
     }
@@ -193,7 +191,7 @@ function App() {
     });
 
     return filtered;
-  }, [offers, airlineFilters, sortBy, dateGrid, selectedFlexDep, selectedFlexRet]);
+  }, [offers, airlineFilters, sortBy, dateGrid, selectedFlexDep, selectedFlexRet, stopsFilter]);
 
   const cheapestPrice = filteredOffers.length > 0 ? filteredOffers[0].price : 0;
 
@@ -348,6 +346,8 @@ function App() {
                             onToggle={toggleAirlineFilter}
                             onSelectAll={selectAllAirlines}
                             onDeselectAll={deselectAllAirlines}
+                            stops={stopsFilter}
+                            onStopsChange={setStopsFilter}
                             currency={currency}
                           />
                         </div>

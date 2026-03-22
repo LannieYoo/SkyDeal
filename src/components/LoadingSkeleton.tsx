@@ -5,6 +5,17 @@ export default function LoadingSkeleton() {
   const lang = useLanguage();
   return (
     <div className="space-y-4">
+      {/* Loading indicator */}
+      <div className="text-center pb-6">
+        <div className="inline-flex items-center gap-3 text-purple-500 bg-white/50 px-6 py-3 rounded-full shadow-sm backdrop-blur-sm border border-purple-100">
+          <div className="relative w-6 h-6">
+            <div className="absolute inset-0 border-2 border-purple-200 rounded-full" />
+            <div className="absolute inset-0 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <span className="text-sm font-semibold animate-pulse-glow">{t('loading.searching', lang)}</span>
+        </div>
+      </div>
+
       {[1, 2, 3, 4, 5].map((i) => (
         <div
           key={i}
@@ -82,17 +93,6 @@ export default function LoadingSkeleton() {
           </div>
         </div>
       ))}
-
-      {/* Loading indicator */}
-      <div className="text-center py-8">
-        <div className="inline-flex items-center gap-3 text-purple-500">
-          <div className="relative w-8 h-8">
-            <div className="absolute inset-0 border-2 border-purple-200 rounded-full" />
-            <div className="absolute inset-0 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-          <span className="text-sm font-medium animate-pulse-glow">{t('loading.searching', lang)}</span>
-        </div>
-      </div>
     </div>
   );
 }

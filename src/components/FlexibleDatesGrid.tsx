@@ -90,19 +90,21 @@ export default function FlexibleDatesGrid({
                     <td key={ret} className="p-1">
                       <button
                         onClick={() => onSelectDate(dep, ret)}
-                        className={`w-full h-10 rounded-lg text-xs font-medium transition-all duration-200 border
+                        className={`w-full h-11 rounded-lg text-xs font-medium transition-all duration-200 border-2
                           ${isSelected
-                            ? 'ring-2 ring-purple-400 border-purple-400 bg-purple-50 text-purple-700 shadow-sm'
-                            : getPriceColor(result.minPrice)
-                          }`}
+                            ? 'border-purple-500 ring-2 ring-purple-200 shadow-md scale-[1.03] z-10 relative'
+                            : 'border-transparent shadow-sm'
+                          } ${getPriceColor(result.minPrice)}`}
                         title={`${getShortDate(dep)} ~ ${getShortDate(ret)}: ${formatCurrencyPrice(result.minPrice, currency)}`}
                       >
-                        {formatShortPrice(result.minPrice, currency)}
-                        {isCheap && (
-                          <div className={`text-[9px] font-bold ${result.minPrice === minPrice ? 'text-green-100' : 'text-green-600'}`}>
-                            {t('flex.lowest', lang)}
-                          </div>
-                        )}
+                        <div className="flex flex-col items-center justify-center leading-tight">
+                          <span>{formatShortPrice(result.minPrice, currency)}</span>
+                          {isCheap && (
+                            <div className="text-[9px] font-extrabold mt-0.5 uppercase tracking-tighter">
+                              {t('flex.lowest', lang)}
+                            </div>
+                          )}
+                        </div>
                       </button>
                     </td>
                   );

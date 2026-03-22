@@ -3,7 +3,9 @@ import { SearchParams, CabinClass } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { t, formatPassengers } from '../utils/i18n';
 import AirportInput from './AirportInput';
+import MapModal from './MapModal';
 import { airports } from '../data/airports';
+import { getLocalizedCity } from '../utils/langUtils';
 
 function getToday() {
   return new Date().toISOString().split('T')[0];
@@ -88,6 +90,7 @@ export default function SearchForm({ onSearch, isLoading, prefill }: SearchFormP
   const [flexibleRange, setFlexibleRange] = useState(3);
   const [passengers, setPassengers] = useState(1);
   const [cabinClass, setCabinClass] = useState<CabinClass>('ECONOMY');
+  const [mapTarget, setMapTarget] = useState<'origin' | 'destination' | null>(null);
 
   useEffect(() => {
     if (prefill) {
@@ -97,12 +100,23 @@ export default function SearchForm({ onSearch, isLoading, prefill }: SearchFormP
       if (prefill.returnDate) setReturnDate(prefill.returnDate);
       
       const originAirport = airports.find(a => a.code === prefill.origin);
-      setOriginDisplay(originAirport ? `${originAirport.city} (${originAirport.code})` : prefill.origin);
+      setOriginDisplay(originAirport ? `${getLocalizedCity(originAirport.city, lang)} (${originAirport.code})` : prefill.origin);
       
       const destAirport = airports.find(a => a.code === prefill.destination);
-      setDestinationDisplay(destAirport ? `${destAirport.city} (${destAirport.code})` : prefill.destination);
+      setDestinationDisplay(destAirport ? `${getLocalizedCity(destAirport.city, lang)} (${destAirport.code})` : prefill.destination);
     }
-  }, [prefill]);
+  }, [prefill, lang]);
+
+  useEffect(() => {
+    if (origin) {
+      const originAirport = airports.find(a => a.code === origin);
+      if (originAirport) setOriginDisplay(`${getLocalizedCity(originAirport.city, lang)} (${originAirport.code})`);
+    }
+    if (destination) {
+      const destAirport = airports.find(a => a.code === destination);
+      if (destAirport) setDestinationDisplay(`${getLocalizedCity(destAirport.city, lang)} (${destAirport.code})`);
+    }
+  }, [lang, origin, destination]);
 
   const handleSwap = useCallback(() => {
     const tempCode = origin;
@@ -156,9 +170,10 @@ export default function SearchForm({ onSearch, isLoading, prefill }: SearchFormP
             placeholder={t('search.placeholder', lang)}
             value={originDisplay}
             icon={<PlaneDepart />}
+            onMapClick={() => setMapTarget('origin')}
             onSelect={(airport) => {
               setOrigin(airport.code);
-              setOriginDisplay(`${airport.city} (${airport.code})`);
+              setOriginDisplay(`${getLocalizedCity(airport.city, lang)} (${airport.code})`);
             }}
           />
         </div>
@@ -183,9 +198,10 @@ export default function SearchForm({ onSearch, isLoading, prefill }: SearchFormP
             placeholder={t('search.placeholder', lang)}
             value={destinationDisplay}
             icon={<PlaneLand />}
+            onMapClick={() => setMapTarget('destination')}
             onSelect={(airport) => {
               setDestination(airport.code);
-              setDestinationDisplay(`${airport.city} (${airport.code})`);
+              setDestinationDisplay(`${getLocalizedCity(airport.city, lang)} (${airport.code})`);
             }}
           />
         </div>
@@ -321,6 +337,21 @@ export default function SearchForm({ onSearch, isLoading, prefill }: SearchFormP
           ))}
         </select>
       </div>
+
+      {/* Map Modal */}
+      <MapModal
+        isOpen={mapTarget !== null}
+        onClose={() => setMapTarget(null)}
+        onSelect={(airport) => {
+          if (mapTarget === 'origin') {
+            setOrigin(airport.code);
+            setOriginDisplay(`${airport.city} (${airport.code})`);
+          } else if (mapTarget === 'destination') {
+            setDestination(airport.code);
+            setDestinationDisplay(`${airport.city} (${airport.code})`);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -5,6 +5,9 @@ export interface Airport {
   name: string;
   city: string;
   country: string;
+  lat?: number;
+  lng?: number;
+  type?: 'large' | 'medium';
 }
 
 export interface SearchParams {

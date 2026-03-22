@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Airport } from '../types';
 import { searchAirports } from '../data/airports';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getLocalizedCity, getLocalizedName } from '../utils/langUtils';
 
 interface AirportInputProps {
   label: string;
@@ -8,10 +10,12 @@ interface AirportInputProps {
   value: string;
   icon: React.ReactNode;
   onSelect: (airport: Airport) => void;
+  onMapClick?: () => void;
   id: string;
 }
 
-export default function AirportInput({ label, placeholder, value, icon, onSelect, id }: AirportInputProps) {
+export default function AirportInput({ label, placeholder, value, icon, onSelect, onMapClick, id }: AirportInputProps) {
+  const lang = useLanguage();
   const [query, setQuery] = useState(value);
   const [results, setResults] = useState<Airport[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -43,10 +47,10 @@ export default function AirportInput({ label, placeholder, value, icon, onSelect
   }, []);
 
   const handleSelect = useCallback((airport: Airport) => {
-    setQuery(`${airport.city} (${airport.code})`);
+    setQuery(`${getLocalizedCity(airport.city, lang)} (${airport.code})`);
     onSelect(airport);
     setIsOpen(false);
-  }, [onSelect]);
+  }, [onSelect, lang]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (!isOpen) return;
@@ -88,9 +92,24 @@ export default function AirportInput({ label, placeholder, value, icon, onSelect
             }
           }}
           placeholder={placeholder}
-          className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all duration-200"
+          className="w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all duration-200 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
           autoComplete="off"
         />
+        {onMapClick && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onMapClick();
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-purple-500 transition-colors bg-white hover:bg-purple-50 rounded-full p-1"
+            title="지도에서 선택"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {isOpen && results.length > 0 && (
@@ -106,8 +125,8 @@ export default function AirportInput({ label, placeholder, value, icon, onSelect
                 {airport.code}
               </span>
               <div className="min-w-0">
-                <div className="text-gray-800 text-sm truncate">{airport.city}</div>
-                <div className="text-gray-500 text-xs truncate">{airport.name}</div>
+                <div className="text-gray-800 text-sm truncate">{getLocalizedCity(airport.city, lang)}</div>
+                <div className="text-gray-500 text-xs truncate">{getLocalizedName(airport.name, lang)}</div>
               </div>
               <span className="ml-auto text-gray-500 text-xs shrink-0">{airport.country}</span>
             </button>

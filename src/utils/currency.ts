@@ -59,7 +59,11 @@ export function formatShortPrice(priceKRW: number, currency: Currency): string {
   
   switch (currency) {
     case 'KRW':
-      return `${(converted / 10000).toFixed(0)}만`;
+      const man = converted / 10000;
+      if (man < 1000) {
+        return `${man.toFixed(1)}만`;
+      }
+      return `${Math.round(man)}만`;
     case 'USD':
     case 'CAD':
       return `${info.symbol}${Math.round(converted)}`;

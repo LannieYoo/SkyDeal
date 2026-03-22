@@ -141,9 +141,9 @@ const translations = {
     zh: '最低价:',
   },
   'flex.notice': {
-    ko: '클릭 시 구글 플라이트의 실제 실시간 가격으로 표와 결과가 갱신됩니다.',
-    en: 'Click a date to fetch real-time actual prices from Google Flights.',
-    zh: '点击某个日期，从 Google Flights 获取实际的实时价格。',
+    ko: '클릭 시 구글 항공권의 실제 실시간 가격으로 결과가 갱신됩니다.',
+    en: 'Click a date to fetch actual real-time prices.',
+    zh: '点击日期以获取实际实时价格。',
   },
   'flex.depLabel': {
     ko: '가는날 ↓ / 오는날 →',
@@ -360,6 +360,26 @@ const translations = {
     ko: '전체 해제',
     en: 'Deselect all',
     zh: '取消全选',
+  },
+  'filter.stops': {
+    ko: '경유 횟수',
+    en: 'Stops',
+    zh: '经停次数',
+  },
+  'filter.direct': {
+    ko: '직항',
+    en: 'Direct only',
+    zh: '直飞',
+  },
+  'filter.1stop': {
+    ko: '1회 경유 이하',
+    en: '1 stop or direct',
+    zh: '1次经停以内',
+  },
+  'filter.anyStops': {
+    ko: '모든 경유',
+    en: 'Any stops',
+    zh: '任何次数',
   },
 
   // Loading
